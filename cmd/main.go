@@ -3,23 +3,12 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
-	"payment-gateway/db"
+	"payment-gateway/database"
 	"payment-gateway/internal/api"
 )
 
 func main() {
-
-	// Initialize the database connection
-	dbUser := os.Getenv("DB_USER")
-	dbPassword := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-
-	dbURL := "postgres://" + dbUser + ":" + dbPassword + "@" + dbHost + ":" + dbPort + "/" + dbName + "?sslmode=disable"
-
-	db.InitializeDB(dbURL)
+	database.InitializeDB()
 
 	// Set up the HTTP server and routes
 	router := api.SetupRouter()

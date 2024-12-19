@@ -1,79 +1,63 @@
 package kafka
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
-	"time"
 
-	"github.com/segmentio/kafka-go"
+	"github.com/Shopify/sarama"
 )
 
-var writer *kafka.Writer
+// KafkaProducer defines an interface for producing Kafka messages
+// This allows for mocking in unit tests.
+type KafkaProducer interface {
+	ProduceMessage(data []byte, topic string) error
+}
 
-// Initialize the Kafka writer
-func init() {
+// SaramaProducer is an implementation of KafkaProducer using Sarama
+type SaramaProducer struct {
+	producer sarama.SyncProducer
+}
+
+// NewKafkaProducer initializes a new Kafka producer instance
+func NewKafkaProducer() (KafkaProducer, error) {
 	kafkaURL := os.Getenv("KAFKA_BROKER_URL")
 	if kafkaURL == "" {
 		kafkaURL = "kafka:9092"
 	}
 
-	writer = &kafka.Writer{
-		Addr:                   kafka.TCP(kafkaURL),
-		Balancer:               &kafka.LeastBytes{},
-		AllowAutoTopicCreation: true,
-		BatchTimeout:           10 * time.Millisecond,
-	}
+	config := sarama.NewConfig()
+	config.Producer.RequiredAcks = sarama.WaitForAll // Wait for all in-sync replicas to acknowledge
+	config.Producer.Retry.Max = 5                    // Retry up to 5 times
+	config.Producer.Return.Successes = true          // Return successes
 
-	log.Println("Kafka writer initialized successfully.")
-}
-
-// returns the appropriate Kafka topic based on the data format.
-func GetTopic(dataFormat string) (string, error) {
-	switch dataFormat {
-	case "application/json":
-		return "transactions.json", nil
-	case "text/xml":
-		return "transactions.soap", nil
-	case "application/xml":
-		return "transactions.soap", nil
-	default:
-		return "", fmt.Errorf("unsupported data format: %s", dataFormat)
-	}
-}
-
-// publishes a message to the Kafka topic
-func PublishTransaction(ctx context.Context, transactionID string, message []byte, dataFormat string) error {
-	if writer == nil {
-		log.Println("Kafka writer is nil, cannot publish to Kafka.")
-		return fmt.Errorf("Kafka writer is not initialized")
-	}
-
-	topic, err := GetTopic(dataFormat)
+	brokers := []string{kafkaURL}
+	producer, err := sarama.NewSyncProducer(brokers, config)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("failed to initialize Kafka producer: %v", err)
 	}
 
-	log.Printf("Publishing message to Kafka topic: %s...", topic)
+	log.Println("Kafka producer initialized successfully.")
+	return &SaramaProducer{producer: producer}, nil
+}
 
-	kafkaMessage := kafka.Message{
-		Key:   []byte(transactionID),
-		Value: message,
+// ProduceMessage sends a message to the specified Kafka topic
+func (p *SaramaProducer) ProduceMessage(data []byte, topic string) error {
+	msg := &sarama.ProducerMessage{
 		Topic: topic,
+		Value: sarama.ByteEncoder(data),
 	}
 
-	err = writer.WriteMessages(ctx, kafkaMessage)
+	partition, offset, err := p.producer.SendMessage(msg)
 	if err != nil {
-		log.Printf("Error publishing to Kafka: %v", err)
-		return err
+		return fmt.Errorf("failed to send message to Kafka: %v", err)
 	}
 
-	log.Println("Message successfully published to Kafka on topic " + string(topic))
+	log.Printf("Message sent to topic %s, partition %d, offset %d\n", topic, partition, offset)
 	return nil
 }
 
-// Close the writer when the system shut down
-func Close() error {
-	return writer.Close()
+// Close closes the underlying Kafka producer
+func (p *SaramaProducer) Close() error {
+	return p.producer.Close()
 }

@@ -1,11 +1,13 @@
 DO $$ 
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'gateways') THEN
+        CREATE TYPE health_status_enum AS ENUM ('healthy', 'unhealthy');
+
         CREATE TABLE gateways (
             id SERIAL PRIMARY KEY,
             name VARCHAR(255) NOT NULL UNIQUE,
             data_format_supported VARCHAR(50) NOT NULL,
-            health_status VARCHAR(20) DEFAULT 'healthy', -- Track gateway health: 'healthy', 'unhealthy'
+            health_status health_status_enum DEFAULT 'healthy', -- Track gateway health: ENUM type
             last_checked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Timestamp of the last health check
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -46,13 +48,15 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'transactions') THEN
         CREATE TABLE transactions (
             id SERIAL PRIMARY KEY,
+            reference_id UUID NOT NULL UNIQUE, -- unique identifier for the transaction
             amount DECIMAL(10, 2) NOT NULL,
+            currency CHAR(3) NOT NULL,
             type VARCHAR(50) NOT NULL, -- deposit/withdrawal
             status VARCHAR(50) NOT NULL, -- pending, completed, failed
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  
-            gateway_id INT NOT NULL,  
-            country_id INT NOT NULL,  
+            gateway_id INT NOT NULL,
+            country_id INT NOT NULL,
             user_id INT NOT NULL,
             FOREIGN KEY (gateway_id) REFERENCES gateways(id) ON DELETE SET NULL,
             FOREIGN KEY (country_id) REFERENCES countries(id) ON DELETE CASCADE,
@@ -82,3 +86,7 @@ CREATE INDEX IF NOT EXISTS idx_gateway_health_status ON gateways(health_status);
 CREATE INDEX IF NOT EXISTS idx_gateway_last_checked ON gateways(last_checked_at);
 CREATE INDEX IF NOT EXISTS idx_transaction_status ON transactions(status);
 CREATE INDEX IF NOT EXISTS idx_transaction_gateway_id ON transactions(gateway_id);
+CREATE INDEX IF NOT EXISTS idx_countries_code ON countries(code);
+CREATE INDEX IF NOT EXISTS idx_gateway_countries_country_id ON gateway_countries(country_id);
+CREATE INDEX IF NOT EXISTS idx_gateway_countries_composite ON gateway_countries(country_id, priority, gateway_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_reference_id ON transactions(reference_id);

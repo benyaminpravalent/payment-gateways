@@ -1,11 +1,11 @@
-package services
+package utils
 
 import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"net/http"
-	"payment-gateway/internal/models"
+	"payment-gateway/models"
 )
 
 // decodes the incoming request based on content type
