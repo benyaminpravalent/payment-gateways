@@ -11,7 +11,7 @@ import (
 
 var db *sqlx.DB
 
-func InitializeDB() {
+func init() {
 	uri := os.Getenv("POSTGRES_URI")
 	if uri == "" {
 		log.Fatalf("POSTGRES_URI environment variable is not set")

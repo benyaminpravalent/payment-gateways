@@ -26,9 +26,10 @@ func (r *TransactionRepository) InsertTransaction(ctx context.Context, transacti
 		INSERT INTO transactions (
 			reference_id, amount, currency, type, status, created_at, updated_at, country_id, user_id
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+			$1, $2, $3, $4, $5, $6, $7, $8, $9
 		) RETURNING id;
 	`
+
 	err := r.db.QueryRowContext(
 		ctx,
 		query,
