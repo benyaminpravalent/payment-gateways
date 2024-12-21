@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/Shopify/sarama"
 )
@@ -18,22 +19,20 @@ type SaramaProducer struct {
 }
 
 func NewKafkaProducer() KafkaProducer {
-	kafkaURL := os.Getenv("KAFKA_BROKER_URL")
-	if kafkaURL == "" {
-		kafkaURL = "localhost:9092"
-		log.Printf("KAFKA_BROKER_URL is not set. Using default: %s\n", kafkaURL)
+	kafkaBrokers := os.Getenv("KAFKA_BROKER_URL")
+	if kafkaBrokers == "" {
+		kafkaBrokers = "localhost:9092"
+		log.Printf("KAFKA_BROKER_URL is not set. Using default: %s\n", kafkaBrokers)
 	}
 
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Retry.Max = 5
-	config.Producer.Return.Errors = true
 	config.Producer.Return.Successes = true
 
-	brokers := []string{kafkaURL}
-	log.Printf("Connecting to Kafka broker(s): %v\n", brokers)
+	log.Printf("Connecting to Kafka broker(s): %v\n", kafkaBrokers)
 
-	producer, err := sarama.NewSyncProducer(brokers, config)
+	producer, err := sarama.NewSyncProducer(strings.Split(kafkaBrokers, ","), config)
 	if err != nil {
 		log.Fatalf("Failed to initialize Kafka producer: %v", err)
 	}

@@ -27,10 +27,10 @@ func InstallTransactionController(e *echo.Echo, s ITransactionService, contextTi
 
 	transactionGroup := e.Group("/transaction")
 
-	transactionGroup.POST("/deposit", controller.deposit)
+	transactionGroup.POST("/deposit", controller.Deposit)
 }
 
-func (controller *TransactionController) deposit(c echo.Context) error {
+func (controller *TransactionController) Deposit(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), controller.contextTimeout)
 	defer cancel()
 
@@ -53,6 +53,6 @@ func (controller *TransactionController) deposit(c echo.Context) error {
 		Message:    "Transaction is in process",
 		Data:       result,
 	}
-	
+
 	return c.JSON(http.StatusAccepted, response)
 }

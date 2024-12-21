@@ -8,9 +8,9 @@ import (
 	"log"
 
 	"payment-gateway/internal/client"
+	"payment-gateway/internal/config"
 	"payment-gateway/internal/kafka"
 	"payment-gateway/internal/repositories"
-	"payment-gateway/internal/services"
 	"payment-gateway/models"
 	"payment-gateway/pkg/constants"
 	"payment-gateway/pkg/utils"
@@ -33,7 +33,6 @@ type TransactionHandler struct {
 	kafkaProducer         kafka.KafkaProducer
 	sendTransactionClient client.TransactionClient
 	gatewayCountryRepo    repositories.GatewayCountryRepository
-	gatewayService        services.GatewayService
 	gatewayRepo           repositories.GatewayRepository
 }
 
@@ -43,7 +42,6 @@ func NewTransactionHandler(
 	kafkaProducer kafka.KafkaProducer,
 	sendTransactionClient client.TransactionClient,
 	gatewayCountryRepo repositories.GatewayCountryRepository,
-	gatewayService services.GatewayService,
 	gatewayRepo repositories.GatewayRepository,
 ) *TransactionHandler {
 	return &TransactionHandler{
@@ -51,7 +49,6 @@ func NewTransactionHandler(
 		kafkaProducer:         kafkaProducer,
 		sendTransactionClient: sendTransactionClient,
 		gatewayCountryRepo:    gatewayCountryRepo,
-		gatewayService:        gatewayService,
 		gatewayRepo:           gatewayRepo,
 	}
 }
@@ -92,7 +89,7 @@ func (h *TransactionHandler) TransactionProcessor(ctx context.Context, transacti
 		return err
 	}
 
-	gatewayConfig, err := h.gatewayService.GatewayConfigSelection(gateway.Name)
+	gatewayConfig, err := config.GatewayConfigSelection(gateway.Name)
 	if err != nil {
 		log.Printf("Failed while GatewayConfigSelection: %v", err)
 		return err
@@ -121,11 +118,12 @@ func (h *TransactionHandler) TransactionProcessor(ctx context.Context, transacti
 		return err
 	}
 
+	// retry until 3 times, if its still failed, fallback to another available gateway
 	err = utils.RetryOperation(func() error {
 		return h.sendTransactionClient.SendTransaction(ctx, builtExternalTransaction, gateway.Name, gatewayConfig)
 	}, maxRetries)
 	if err != nil {
-		log.Printf("Failed while BuildExternalTransactionRequest: %v", err)
+		log.Printf("Failed while SendTransaction: %v", err)
 		updateErr := h.gatewayRepo.UpdateHealthStatus(ctx, gateway.ID, constants.UNHEALTHY)
 		if updateErr != nil {
 			log.Printf("Failed to update health status for gateway ID %d: %v", gateway.ID, updateErr)

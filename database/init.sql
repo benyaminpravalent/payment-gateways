@@ -104,7 +104,7 @@ VALUES
     ('Gateway C', 'json', 'healthy', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT DO NOTHING;
 
-INSERT INTO users (username, email, password, balance, country_id, created_at, updated_at)
+INSERT INTO users (username, email, password, country_id, created_at, updated_at)
 VALUES 
-    ('test_user', 'test_user@example.com', 'hashed_password', 1000.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ('test_user', 'test_user@example.com', 'hashed_password', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT DO NOTHING;

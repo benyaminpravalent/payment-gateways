@@ -42,7 +42,7 @@ func restServer(cmd *cobra.Command, args []string) {
 	// middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-		
+
 	timeoutCtx := initTimeoutCtx()
 
 	//Run cron in the same process as web server
@@ -62,7 +62,7 @@ func restServer(cmd *cobra.Command, args []string) {
 			e.Logger.Fatal(fmt.Sprintf("shutting down the server: %s", err))
 		}
 	}()
-	
+
 	// Wait for interrupt signal to gracefully shutdown the server with a timeout of 185 seconds.
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
@@ -86,5 +86,5 @@ func restServer(cmd *cobra.Command, args []string) {
 }
 
 func registerControllers(e *echo.Echo, timeoutCtx time.Duration) {
-	rest.InstallTransactionController(e, transactionService, timeoutCtx)
+	rest.InstallTransactionController(e, TransactionService, timeoutCtx)
 }

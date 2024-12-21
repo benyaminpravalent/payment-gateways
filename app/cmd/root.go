@@ -3,6 +3,7 @@ package cmd
 import (
 	"log"
 	"payment-gateway/database"
+	"payment-gateway/internal/client"
 	"payment-gateway/internal/kafka"
 	"payment-gateway/internal/repositories"
 	"payment-gateway/internal/services"
@@ -12,9 +13,12 @@ import (
 
 // Declare services and repositories here
 var (
-	transactionRepository *repositories.TransactionRepository
-	kafkaProducer         kafka.KafkaProducer
-	transactionService    *services.TransactionService
+	TransactionRepository *repositories.TransactionRepository
+	KafkaProducer         kafka.KafkaProducer
+	TransactionService    *services.TransactionService
+	SendTransactionClient *client.TransactionClient
+	GatewayCountryRepo    *repositories.GatewayCountryRepository
+	GatewayRepo           *repositories.GatewayRepository
 )
 
 var (
@@ -33,15 +37,23 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initApp)
+	cobra.OnInitialize(initApp, initConsumer)
 }
 
 func initApp() {
 	db := database.GetDB()
 
-	kafkaProducer = kafka.NewKafkaProducer()
+	KafkaProducer = kafka.NewKafkaProducer()
 
-	transactionRepository = repositories.NewTransactionRepository(db)
+	SendTransactionClient = client.NewTransactionClient()
 
-	transactionService = services.NewTransactionService(transactionRepository, kafkaProducer)
+	GatewayCountryRepo = repositories.NewGatewayCountryRepository(db)
+	TransactionRepository = repositories.NewTransactionRepository(db)
+	GatewayRepo = repositories.NewGatewayRepository(db)
+
+	TransactionService = services.NewTransactionService(TransactionRepository, KafkaProducer)
+}
+
+func initConsumer() {
+	go kafka.InitializeKafkaConsumer()
 }
