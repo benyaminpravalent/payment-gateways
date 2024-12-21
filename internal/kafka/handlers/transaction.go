@@ -68,7 +68,7 @@ func (h *TransactionHandler) HandleTransaction(ctx context.Context, message *sar
 	err := h.TransactionProcessor(ctx, transaction)
 	if err != nil {
 		if err.Error() == "error while SendTransaction" {
-			log.Printf("Republish transactionID=%d to be retried with another gateway", transaction.ID)
+			log.Printf("Republish transactionID=%d to be retried, fallback to another gateway", transaction.ID)
 
 			go h.kafkaProducer.ProduceMessage(message.Value, kafka.SendTransactionKafkaTopic)
 			return
