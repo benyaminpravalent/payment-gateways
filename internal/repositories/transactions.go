@@ -99,3 +99,29 @@ func (r *TransactionRepository) UpdateTransactionStatusByReferenceID(ctx context
 
 	return nil
 }
+
+func (r *TransactionRepository) UpdateGatewayIDByTransactionID(ctx context.Context, transactionID int, gatewayID int) error {
+	query := `
+		UPDATE transactions
+		SET gateway_id = $1, updated_at = NOW()
+		WHERE id = $2;
+	`
+	result, err := r.db.ExecContext(ctx, query, gatewayID, transactionID)
+	if err != nil {
+		log.Printf("Error updating gateway_id for transaction ID %d: %v", transactionID, err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Printf("Error getting rows affected for transaction ID %d: %v", transactionID, err)
+		return err
+	}
+
+	if rowsAffected == 0 {
+		log.Printf("No transaction found with ID %d to update", transactionID)
+		return sql.ErrNoRows
+	}
+
+	return nil
+}

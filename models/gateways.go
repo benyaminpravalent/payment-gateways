@@ -3,8 +3,8 @@ package models
 import "time"
 
 type GatewayDetail struct {
-	GatewayID           int       `db:"gateway_id"`
-	GatewayName         string    `db:"gateway_name"`
+	ID                  int       `db:"id"`
+	Name                string    `db:"name"`
 	DataFormatSupported string    `db:"data_format_supported"`
 	HealthStatus        string    `db:"health_status"`
 	LastCheckedAt       time.Time `db:"last_checked_at"`
@@ -13,11 +13,6 @@ type GatewayDetail struct {
 	Priority            int       `db:"priority"`
 	CountryID           int       `db:"country_id"`
 	Currency            string    `db:"currency"`
-}
-
-type GatewayResponse struct {
-	Status  string `json:"status"`
-	Message string `json:"message"`
 }
 
 type GatewayConfig struct {

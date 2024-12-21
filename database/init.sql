@@ -6,7 +6,6 @@ BEGIN
             username VARCHAR(255) NOT NULL UNIQUE,
             email VARCHAR(255) NOT NULL UNIQUE,
             password VARCHAR(255) NOT NULL,
-            balance DECIMAL(12, 2) NOT NULL DEFAULT 0.00, -- User balance column
             country_id INT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -68,7 +67,7 @@ BEGIN
             amount DECIMAL(10, 2) NOT NULL,
             currency CHAR(3) NOT NULL,
             type VARCHAR(50) NOT NULL, -- deposit/withdrawal
-            status VARCHAR(50) NOT NULL, -- pending, completed, failed
+            status VARCHAR(50) NOT NULL, -- pending, retry, completed, failed
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  
             gateway_id INT,
@@ -100,9 +99,9 @@ ON CONFLICT DO NOTHING;
 
 INSERT INTO gateways (name, data_format_supported, health_status, created_at, updated_at)
 VALUES 
-    ('Gateway A', 'JSON', 'healthy', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('Gateway B', 'JSON', 'healthy', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('Gateway C', 'JSON', 'healthy', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ('Gateway A', 'json', 'healthy', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('Gateway B', 'soap', 'healthy', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('Gateway C', 'json', 'healthy', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO users (username, email, password, balance, country_id, created_at, updated_at)

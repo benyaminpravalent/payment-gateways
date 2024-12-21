@@ -3,14 +3,23 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
 
 	"payment-gateway/internal/client"
 	"payment-gateway/internal/kafka"
 	"payment-gateway/internal/repositories"
+	"payment-gateway/internal/services"
 	"payment-gateway/models"
+	"payment-gateway/pkg/constants"
+	"payment-gateway/pkg/utils"
 
 	"github.com/Shopify/sarama"
+)
+
+const (
+	maxRetries = 3
 )
 
 // TransactionConsumer defines the interface for handling Kafka messages
@@ -20,10 +29,12 @@ type TransactionConsumer interface {
 
 // TransactionHandler is the implementation of the TransactionConsumer
 type TransactionHandler struct {
-	transactionRepo        repositories.TransactionRepository
-	kafkaProducer          kafka.KafkaProducer
-	sendTransactionClient  client.TransactionClient
-	gatewayCountryRepo     repositories.GatewayCountryRepository
+	transactionRepo       repositories.TransactionRepository
+	kafkaProducer         kafka.KafkaProducer
+	sendTransactionClient client.TransactionClient
+	gatewayCountryRepo    repositories.GatewayCountryRepository
+	gatewayService        services.GatewayService
+	gatewayRepo           repositories.GatewayRepository
 }
 
 // NewTransactionHandler initializes a new TransactionHandler
@@ -32,48 +43,100 @@ func NewTransactionHandler(
 	kafkaProducer kafka.KafkaProducer,
 	sendTransactionClient client.TransactionClient,
 	gatewayCountryRepo repositories.GatewayCountryRepository,
+	gatewayService services.GatewayService,
+	gatewayRepo repositories.GatewayRepository,
 ) *TransactionHandler {
 	return &TransactionHandler{
-		transactionRepo:    transactionRepo,
-		kafkaProducer:      kafkaProducer,
+		transactionRepo:       transactionRepo,
+		kafkaProducer:         kafkaProducer,
 		sendTransactionClient: sendTransactionClient,
-		gatewayCountryRepo: gatewayCountryRepo,
+		gatewayCountryRepo:    gatewayCountryRepo,
+		gatewayService:        gatewayService,
+		gatewayRepo:           gatewayRepo,
 	}
 }
 
-// Consume processes a Kafka message
-func (h *TransactionHandler) HandleTransaction(ctx context.Context, message *sarama.ConsumerMessage) error {
-	log.Printf("Received message: Topic=%s Partition=%d Offset=%d", message.Topic, message.Partition, message.Offset)
-
-	// Decode the message
+func (h *TransactionHandler) HandleTransaction(ctx context.Context, message *sarama.ConsumerMessage) {
 	var transaction *models.Transaction
 	if err := json.Unmarshal(message.Value, &transaction); err != nil {
 		log.Printf("Failed to unmarshal message: %v", err)
-		return err
+		return
 	}
 
 	log.Printf("Processing transaction: %v", transaction)
 
-	// Process the transaction (e.g., interact with a third-party service)
-	response, err := h.client.SendTransaction(ctx, transaction)
+	err := h.TransactionProcessor(ctx, transaction)
 	if err != nil {
-		log.Printf("Failed to send transaction to third party: %v", err)
-		// Optionally, publish a failure message to another Kafka topic
+		if err.Error() == "error while SendTransaction" {
+			log.Printf("Republish transactionID=%d to be retried with another gateway", transaction.ID)
+
+			go h.kafkaProducer.ProduceMessage(message.Value, kafka.SendTransactionKafkaTopic)
+			return
+		}
+
+		err = h.transactionRepo.UpdateTransactionStatusByReferenceID(ctx, transaction.ReferenceID.String(), constants.RETRY)
+		if err != nil {
+			log.Printf("Failed to UpdateTransactionStatusByReferenceID: %v", err)
+		}
+
+		return
+	}
+
+	log.Printf("Transaction successfully processed: %v", transaction)
+}
+
+func (h *TransactionHandler) TransactionProcessor(ctx context.Context, transaction *models.Transaction) error {
+	gateway, err := h.gatewayCountryRepo.GetHealthyGatewayByCountryID(ctx, transaction.CountryID)
+	if err != nil {
+		log.Printf("Failed to GetHealthyGatewayByCountryID: %v", err)
 		return err
 	}
 
-	log.Printf("Third-party response: %v", response)
-
-	// Update transaction status in the database
-	transaction.Status = "completed"
-	if err := h.transactionRepo.UpdateTransaction(ctx, transaction); err != nil {
-		log.Printf("Failed to update transaction in database: %v", err)
+	gatewayConfig, err := h.gatewayService.GatewayConfigSelection(gateway.Name)
+	if err != nil {
+		log.Printf("Failed while GatewayConfigSelection: %v", err)
 		return err
 	}
 
-	// Optionally, publish a success message to another Kafka topic
-	if err := h.kafkaProducer.ProduceMessage(message.Value, "transaction-completed"); err != nil {
-		log.Printf("Failed to publish success message: %v", err)
+	transactionRequest := models.SendTransactionRequest{
+		ReferenceID: transaction.ReferenceID.String(),
+		Amount:      transaction.Amount,
+		UserID:      transaction.UserID,
+		Currency:    transaction.Currency,
+	}
+	jsonData, err := json.Marshal(transactionRequest)
+	if err != nil {
+		return fmt.Errorf("failed to serialize request to JSON: %w", err)
+	}
+
+	encryptedPayload, err := utils.EncryptAES(string(jsonData), gatewayConfig.GatewayPrivateKey)
+	if err != nil {
+		log.Printf("Failed while EncryptAES: %v", err)
+		return err
+	}
+
+	builtExternalTransaction, err := utils.BuildExternalTransactionRequest(gateway.DataFormatSupported, encryptedPayload)
+	if err != nil {
+		log.Printf("Failed while BuildExternalTransactionRequest: %v", err)
+		return err
+	}
+
+	err = utils.RetryOperation(func() error {
+		return h.sendTransactionClient.SendTransaction(ctx, builtExternalTransaction, gateway.Name, gatewayConfig)
+	}, maxRetries)
+	if err != nil {
+		log.Printf("Failed while BuildExternalTransactionRequest: %v", err)
+		updateErr := h.gatewayRepo.UpdateHealthStatus(ctx, gateway.ID, constants.UNHEALTHY)
+		if updateErr != nil {
+			log.Printf("Failed to update health status for gateway ID %d: %v", gateway.ID, updateErr)
+			return updateErr
+		}
+		return errors.New("error while SendTransaction")
+	}
+
+	err = h.transactionRepo.UpdateGatewayIDByTransactionID(ctx, transaction.ID, gateway.ID)
+	if err != nil {
+		log.Printf("Failed while UpdateGatewayIDByTransactionID: %v", err)
 		return err
 	}
 

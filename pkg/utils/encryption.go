@@ -6,11 +6,8 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
-	"payment-gateway/models"
 )
 
 func EncryptAES(plaintext, key string) (string, error) {
@@ -104,20 +101,4 @@ func removePadding(plaintext []byte) ([]byte, error) {
 		}
 	}
 	return plaintext[:len(plaintext)-paddingLen], nil
-}
-
-func EncryptTransactionRequest(request *models.TransactionRequest, gatewayPrivateKey string) (string, error) {
-	// Serialize the request struct to JSON
-	jsonData, err := json.Marshal(request)
-	if err != nil {
-		return "", fmt.Errorf("failed to serialize request to JSON: %w", err)
-	}
-
-	// Encrypt the JSON data using the provided gateway private key
-	encryptedData, err := EncryptAES(string(jsonData), gatewayPrivateKey)
-	if err != nil {
-		return "", fmt.Errorf("failed to encrypt request: %w", err)
-	}
-
-	return encryptedData, nil
 }

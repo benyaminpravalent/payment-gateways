@@ -20,14 +20,11 @@ type Transaction struct {
 	UserID      int       `json:"user_id" db:"user_id"`
 }
 
-type TransactionRequest struct {
-	ID        int       `json:"id"`
-	Amount    float64   `json:"amount"`
-	UserID    int       `json:"user_id"`
-	Currency  string    `json:"currency"`
-	Status    string    `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+type SendTransactionRequest struct {
+	ReferenceID string  `json:"reference_id"`
+	Amount      float64 `json:"amount"`
+	UserID      int     `json:"user_id"`
+	Currency    string  `json:"currency"`
 }
 
 type EncryptedTransactionRequest struct {
@@ -48,4 +45,9 @@ type DepositResponse struct {
 	Amount      float64 `json:"amount"`
 	Currency    string  `json:"currency"`
 	CountryID   int     `json:"country_id"`
+}
+
+type BuildExternalTransaction struct {
+	Request     string
+	ContentType string
 }

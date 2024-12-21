@@ -12,9 +12,9 @@ import (
 
 // Declare services and repositories here
 var (
-	transactionRepository    *repositories.TransactionRepository
-	kafkaProducer kafka.KafkaProducer
-	transactionService *services.TransactionService
+	transactionRepository *repositories.TransactionRepository
+	kafkaProducer         kafka.KafkaProducer
+	transactionService    *services.TransactionService
 )
 
 var (

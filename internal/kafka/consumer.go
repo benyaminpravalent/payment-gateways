@@ -57,6 +57,11 @@ func (ConsumerHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim s
 	for message := range claim.Messages() {
 		log.Printf("Message claimed: value = %s, topic = %s, partition = %d, offset = %d", string(message.Value), message.Topic, message.Partition, message.Offset)
 		session.MarkMessage(message, "")
+
+		switch message.Topic {
+		case SendTransactionKafkaTopic:
+			// process
+		}
 	}
 	return nil
 }
