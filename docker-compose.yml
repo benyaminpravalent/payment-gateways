@@ -43,26 +43,29 @@ services:
       - zookeeper
       - postgres
     environment:
-      - POSTGRES_URI=postgres://user:password@postgres:5432/payments?sslmode=disable
-      - KAFKA_BROKER_URL=kafka:9092
-      - KAFKA_GROUP_ID=payment-gateway-group
-      - KAFKA_CLIENT_ID=payment-gateway-client
-      - SEND_TRANSACTION_KAFKA_TOPIC=process-transaction
+      # Database Configuration
+      - POSTGRES_URI=${POSTGRES_URI:-postgres://user:password@postgres:5432/payments?sslmode=disable}
+
+      # Kafka Configuration
+      - KAFKA_BROKER_URL=${KAFKA_BROKER_URL:-kafka:9092}
+      - KAFKA_GROUP_ID=${KAFKA_GROUP_ID:-payment-gateway-group}
+      - KAFKA_CLIENT_ID=${KAFKA_CLIENT_ID:-payment-gateway-client}
+      - SEND_TRANSACTION_KAFKA_TOPIC=${SEND_TRANSACTION_KAFKA_TOPIC:-process-transaction}
 
       # Gateway A Configuration
-      - GATEWAY_A_URL=http://gateway_a:8081
-      - GATEWAY_A_API_KEY=api_key_a
-      - GATEWAY_A_PRIVATE_KEY=12345678901234567890123456789012
+      - GATEWAY_A_URL=${GATEWAY_A_URL:-http://gateway_a:8081}
+      - GATEWAY_A_API_KEY=${GATEWAY_A_API_KEY:-api_key_a}
+      - GATEWAY_A_PRIVATE_KEY=${GATEWAY_A_PRIVATE_KEY:-12345678901234567890123456789012}
 
       # Gateway B Configuration
-      - GATEWAY_B_URL=http://gateway_b:8082
-      - GATEWAY_B_API_KEY=api_key_b
-      - GATEWAY_B_PRIVATE_KEY=12345678901234567890123456789012
+      - GATEWAY_B_URL=${GATEWAY_B_URL:-http://gateway_b:8082}
+      - GATEWAY_B_API_KEY=${GATEWAY_B_API_KEY:-api_key_b}
+      - GATEWAY_B_PRIVATE_KEY=${GATEWAY_B_PRIVATE_KEY:-12345678901234567890123456789012}
 
       # Gateway C Configuration
-      - GATEWAY_C_URL=http://gateway_c:8083
-      - GATEWAY_C_API_KEY=api_key_c
-      - GATEWAY_C_PRIVATE_KEY=12345678901234567890123456789012
+      - GATEWAY_C_URL=${GATEWAY_C_URL:-http://gateway_c:8083}
+      - GATEWAY_C_API_KEY=${GATEWAY_C_API_KEY:-api_key_c}
+      - GATEWAY_C_PRIVATE_KEY=${GATEWAY_C_PRIVATE_KEY:-12345678901234567890123456789012}
     command: ["go", "run", "app/main.go", "rest"]
     networks:
       - kafka_network

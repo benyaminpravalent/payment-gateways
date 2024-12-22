@@ -13,7 +13,7 @@ var (
 	GatewayCPrivateKey string
 )
 
-func init() {
+func InitGatewayC() {
 	GatewayCUrl = os.Getenv("GATEWAY_C_URL")
 	if GatewayCUrl == "" {
 		log.Fatal("GATEWAY_C_URL environment variable is not set")

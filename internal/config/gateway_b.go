@@ -13,7 +13,7 @@ var (
 	GatewayBPrivateKey string
 )
 
-func init() {
+func InitGatewayB() {
 	GatewayBUrl = os.Getenv("GATEWAY_B_URL")
 	if GatewayBUrl == "" {
 		log.Fatal("GATEWAY_B_URL environment variable is not set")

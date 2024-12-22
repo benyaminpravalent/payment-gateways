@@ -14,7 +14,7 @@ var (
 	GatewayAPrivateKey string
 )
 
-func init() {
+func InitGatewayA() {
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatal(".env is not available")
