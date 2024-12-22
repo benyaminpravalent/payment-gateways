@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	mocksClient "payment-gateway/mocks/client"
 	mockKafka "payment-gateway/mocks/kafka"
 	mocksRepository "payment-gateway/mocks/repositories"
@@ -14,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestTransactionService(t *testing.T) {
@@ -58,7 +60,7 @@ var _ = ginkgo.Describe("TransactionHandler", func() {
 			mockCtx = context.Background()
 			transaction = &models.Transaction{
 				ID:          12345,
-				ReferenceID: uuid.New(),
+				ReferenceID: uuid.MustParse("123e4567-e89b-12d3-a456-426614174000"),
 				Amount:      1000,
 				Currency:    "USD",
 				Type:        constants.DEPOSIT,
@@ -78,6 +80,23 @@ var _ = ginkgo.Describe("TransactionHandler", func() {
 			mockMessage.Value = []byte("invalid json")
 			err := transactionHandler.HandleTransaction(mockCtx, mockMessage)
 			gomega.Expect(err).Should(gomega.HaveOccurred())
+		})
+
+		ginkgo.It("should handle error from TransactionProcessor", func() {
+			mockGatewayCountryRepo.
+				On("GetHealthyGatewayByCountryID", mock.Anything, transaction.CountryID).
+				Return(nil, errors.New("error")).
+				Once()
+			mockTransactionRepo.
+				On("UpdateTransactionStatusByReferenceID", mock.Anything, transaction.ReferenceID.String(), constants.RETRY).
+				Return(nil).
+				Once()
+
+			err := transactionHandler.HandleTransaction(mockCtx, mockMessage)
+			gomega.Expect(err).Should(gomega.HaveOccurred())
+
+			mockGatewayCountryRepo.AssertCalled(ginkgo.GinkgoT(), "GetHealthyGatewayByCountryID", mock.Anything, transaction.CountryID)
+			mockTransactionRepo.AssertCalled(ginkgo.GinkgoT(), "UpdateTransactionStatusByReferenceID", mock.Anything, mock.AnythingOfType("string"), constants.RETRY)
 		})
 	})
 })

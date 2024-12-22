@@ -70,9 +70,10 @@ func (h *TransactionHandler) HandleTransaction(ctx context.Context, message *sar
 			return err
 		}
 
-		err = h.transactionRepo.UpdateTransactionStatusByReferenceID(ctx, transaction.ReferenceID.String(), constants.RETRY)
-		if err != nil {
+		errUpdateTransactionStatus := h.transactionRepo.UpdateTransactionStatusByReferenceID(ctx, transaction.ReferenceID.String(), constants.RETRY)
+		if errUpdateTransactionStatus != nil {
 			log.Printf("Failed to UpdateTransactionStatusByReferenceID: %v", err)
+			return errUpdateTransactionStatus
 		}
 
 		return err
