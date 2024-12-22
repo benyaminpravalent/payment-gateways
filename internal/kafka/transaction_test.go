@@ -9,6 +9,7 @@ import (
 	mocksRepository "payment-gateway/mocks/repositories"
 	"payment-gateway/models"
 	"payment-gateway/pkg/constants"
+	"sync"
 	"testing"
 
 	"github.com/Shopify/sarama"
@@ -98,5 +99,37 @@ var _ = ginkgo.Describe("TransactionHandler", func() {
 			mockGatewayCountryRepo.AssertCalled(ginkgo.GinkgoT(), "GetHealthyGatewayByCountryID", mock.Anything, transaction.CountryID)
 			mockTransactionRepo.AssertCalled(ginkgo.GinkgoT(), "UpdateTransactionStatusByReferenceID", mock.Anything, mock.AnythingOfType("string"), constants.RETRY)
 		})
+
+		ginkgo.It("should handle error while SendTransaction from TransactionProcessor", func() {
+			mockGatewayCountryRepo.
+				On("GetHealthyGatewayByCountryID", mock.Anything, transaction.CountryID).
+				Return(nil, errors.New("error while SendTransaction")).
+				Once()
+
+			var wg sync.WaitGroup
+			wg.Add(1)
+
+			mockKafkaProducer.On("ProduceMessage", mockMessage.Value, SendTransactionKafkaTopic).Run(func(args mock.Arguments) {
+				wg.Done()
+			}).Return(nil)
+
+			err := transactionHandler.HandleTransaction(mockCtx, mockMessage)
+			gomega.Expect(err).Should(gomega.HaveOccurred())
+
+			wg.Wait()
+
+			mockGatewayCountryRepo.AssertCalled(ginkgo.GinkgoT(), "GetHealthyGatewayByCountryID", mock.Anything, transaction.CountryID)
+			mockKafkaProducer.AssertCalled(ginkgo.GinkgoT(), "ProduceMessage", mockMessage.Value, SendTransactionKafkaTopic)
+		})
+
+		// ginkgo.It("should successfully process the transaction", func() {
+		// 	mockGatewayCountryRepo.
+		// 		On("GetHealthyGatewayByCountryID", mock.Anything, transaction.CountryID).
+		// 		Return(nil, errors.New("error while SendTransaction")).
+		// 		Once()
+
+		// 	err := transactionHandler.HandleTransaction(mockCtx, mockMessage)
+		// 	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
+		// })
 	})
 })

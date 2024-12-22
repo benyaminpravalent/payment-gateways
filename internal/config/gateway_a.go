@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
@@ -15,11 +14,6 @@ var (
 )
 
 func InitGatewayA() {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Fatal(".env is not available")
-	}
-
 	GatewayAUrl = os.Getenv("GATEWAY_A_URL")
 	if GatewayAUrl == "" {
 		log.Fatal("GATEWAY_A_URL environment variable is not set")
