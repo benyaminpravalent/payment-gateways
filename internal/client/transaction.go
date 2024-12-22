@@ -10,6 +10,10 @@ import (
 	"golang.org/x/exp/rand"
 )
 
+type ITransactionClient interface {
+	SendTransaction(ctx context.Context, transactionRequest models.BuildExternalTransaction, gatewayName string, gatewayConfig models.GatewayConfig) error
+}
+
 type TransactionClient struct{}
 
 func NewTransactionClient() *TransactionClient {

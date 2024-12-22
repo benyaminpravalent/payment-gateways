@@ -8,6 +8,10 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+type IGatewayCountryRepository interface {
+	GetHealthyGatewayByCountryID(ctx context.Context, countryID int) (*models.GatewayDetail, error)
+}
+
 type GatewayCountryRepository struct {
 	db *sqlx.DB
 }

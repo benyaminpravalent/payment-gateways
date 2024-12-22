@@ -28,20 +28,20 @@ type TransactionConsumer interface {
 
 // TransactionHandler is the implementation of the TransactionConsumer
 type TransactionHandler struct {
-	transactionRepo       repositories.TransactionRepository
+	transactionRepo       repositories.ITransactionRepository
 	kafkaProducer         KafkaProducer
-	sendTransactionClient client.TransactionClient
-	gatewayCountryRepo    repositories.GatewayCountryRepository
-	gatewayRepo           repositories.GatewayRepository
+	sendTransactionClient client.ITransactionClient
+	gatewayCountryRepo    repositories.IGatewayCountryRepository
+	gatewayRepo           repositories.IGatewayRepository
 }
 
 // NewTransactionHandler initializes a new TransactionHandler
 func NewTransactionHandler(
-	transactionRepo repositories.TransactionRepository,
+	transactionRepo repositories.ITransactionRepository,
 	kafkaProducer KafkaProducer,
-	sendTransactionClient client.TransactionClient,
-	gatewayCountryRepo repositories.GatewayCountryRepository,
-	gatewayRepo repositories.GatewayRepository,
+	sendTransactionClient client.ITransactionClient,
+	gatewayCountryRepo repositories.IGatewayCountryRepository,
+	gatewayRepo repositories.IGatewayRepository,
 ) *TransactionHandler {
 	return &TransactionHandler{
 		transactionRepo:       transactionRepo,
@@ -52,11 +52,11 @@ func NewTransactionHandler(
 	}
 }
 
-func (h *TransactionHandler) HandleTransaction(ctx context.Context, message *sarama.ConsumerMessage) {
+func (h *TransactionHandler) HandleTransaction(ctx context.Context, message *sarama.ConsumerMessage) error {
 	var transaction *models.Transaction
 	if err := json.Unmarshal(message.Value, &transaction); err != nil {
 		log.Printf("Failed to unmarshal message: %v", err)
-		return
+		return err
 	}
 
 	log.Printf("Processing transaction: %v", transaction)
@@ -67,7 +67,7 @@ func (h *TransactionHandler) HandleTransaction(ctx context.Context, message *sar
 			log.Printf("Republish transactionID=%d to be retried, fallback to another gateway", transaction.ID)
 
 			go h.kafkaProducer.ProduceMessage(message.Value, SendTransactionKafkaTopic)
-			return
+			return err
 		}
 
 		err = h.transactionRepo.UpdateTransactionStatusByReferenceID(ctx, transaction.ReferenceID.String(), constants.RETRY)
@@ -75,10 +75,12 @@ func (h *TransactionHandler) HandleTransaction(ctx context.Context, message *sar
 			log.Printf("Failed to UpdateTransactionStatusByReferenceID: %v", err)
 		}
 
-		return
+		return err
 	}
 
 	log.Printf("Transaction successfully processed: %v", transaction)
+
+	return nil
 }
 
 func (h *TransactionHandler) TransactionProcessor(ctx context.Context, transaction *models.Transaction) error {

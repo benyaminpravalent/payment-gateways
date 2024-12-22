@@ -67,11 +67,11 @@ func (ConsumerHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim s
 	db := database.GetDB()
 
 	transactionHandler := NewTransactionHandler(
-		*repositories.NewTransactionRepository(db),
+		repositories.NewTransactionRepository(db),
 		NewKafkaProducer(),
-		*client.NewTransactionClient(),
-		*repositories.NewGatewayCountryRepository(db),
-		*repositories.NewGatewayRepository(db),
+		client.NewTransactionClient(),
+		repositories.NewGatewayCountryRepository(db),
+		repositories.NewGatewayRepository(db),
 	)
 
 	for message := range claim.Messages() {
@@ -80,7 +80,10 @@ func (ConsumerHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim s
 
 		switch message.Topic {
 		case SendTransactionKafkaTopic:
-			transactionHandler.HandleTransaction(context.Background(), message)
+			err := transactionHandler.HandleTransaction(context.Background(), message)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
