@@ -46,7 +46,7 @@ func restServer(cmd *cobra.Command, args []string) {
 	timeoutCtx := initTimeoutCtx()
 
 	//Run cron in the same process as web server
-	// initCron()
+	InitCron()
 
 	registerControllers(e, timeoutCtx)
 

@@ -19,6 +19,7 @@ var (
 	SendTransactionClient *client.TransactionClient
 	GatewayCountryRepo    *repositories.GatewayCountryRepository
 	GatewayRepo           *repositories.GatewayRepository
+	GatewayService        *services.GatewayService
 )
 
 var (
@@ -51,6 +52,7 @@ func initApp() {
 	TransactionRepository = repositories.NewTransactionRepository(db)
 	GatewayRepo = repositories.NewGatewayRepository(db)
 
+	GatewayService = services.NewGatewayService(GatewayRepo)
 	TransactionService = services.NewTransactionService(TransactionRepository, KafkaProducer)
 }
 

@@ -4,25 +4,34 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"net/http"
 	"payment-gateway/models"
 	"payment-gateway/pkg/constants"
 )
 
-// decodes the incoming request based on content type
-func DecodeRequest(r *http.Request, request *models.SendTransactionRequest) error {
+func DecodeRequest(r *http.Request, request interface{}) error {
+	if r.Body == nil {
+		return fmt.Errorf("request body is empty")
+	}
+	defer r.Body.Close() // Close the body after reading
+
 	contentType := r.Header.Get("Content-Type")
 
 	switch contentType {
 	case "application/json":
-		return json.NewDecoder(r.Body).Decode(request)
-	case "text/xml":
-		return xml.NewDecoder(r.Body).Decode(request)
-	case "application/xml":
-		return xml.NewDecoder(r.Body).Decode(request)
+		if err := json.NewDecoder(r.Body).Decode(request); err != nil && err != io.EOF {
+			return fmt.Errorf("failed to decode JSON: %v", err)
+		}
+	case "text/xml", "application/xml":
+		if err := xml.NewDecoder(r.Body).Decode(request); err != nil && err != io.EOF {
+			return fmt.Errorf("failed to decode XML: %v", err)
+		}
 	default:
-		return fmt.Errorf("unsupported content type")
+		return fmt.Errorf("unsupported content type: %s", contentType)
 	}
+
+	return nil
 }
 
 func BuildExternalTransactionRequest(dataFormatSupported, encryptedRequest string) (models.BuildExternalTransaction, error) {
@@ -34,7 +43,6 @@ func BuildExternalTransactionRequest(dataFormatSupported, encryptedRequest strin
 		}, nil
 
 	case constants.SOAP:
-		// Construct a SOAP envelope with the encrypted request
 		soapEnvelope := `
 			<?xml version="1.0" encoding="UTF-8"?>
 				<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">

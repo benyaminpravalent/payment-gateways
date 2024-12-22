@@ -38,6 +38,13 @@ type DepositRequest struct {
 	CountryID int     `json:"country_id" validate:"required"`
 }
 
+type WithdrawalRequest struct {
+	UserID    int     `json:"user_id" validate:"required"`
+	Amount    float64 `json:"amount" validate:"required,gt=0"`
+	Currency  string  `json:"currency" validate:"required"`
+	CountryID int     `json:"country_id" validate:"required"`
+}
+
 type DepositResponse struct {
 	ReferenceID string  `json:"reference_id"`
 	UserID      int     `json:"user_id"`
@@ -50,4 +57,11 @@ type DepositResponse struct {
 type BuildExternalTransaction struct {
 	Request     string
 	ContentType string
+}
+
+type TransactionCallbackRequest struct {
+	ReferenceID string  `json:"id" xml:"Body>TransactionCallbackRequest>id"`
+	Amount      float64 `json:"amount" xml:"Body>TransactionCallbackRequest>amount"`
+	Currency    string  `json:"currency" xml:"Body>TransactionCallbackRequest>currency"`
+	Status      string  `json:"status" xml:"Body>TransactionCallbackRequest>status"`
 }

@@ -99,9 +99,17 @@ ON CONFLICT DO NOTHING;
 
 INSERT INTO gateways (name, data_format_supported, health_status, created_at, updated_at)
 VALUES 
-    ('Gateway A', 'json', 'healthy', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('Gateway B', 'soap', 'healthy', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('Gateway C', 'json', 'healthy', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ('A', 'json', 'healthy', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('B', 'soap', 'healthy', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('C', 'json', 'healthy', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT DO NOTHING;
+
+-- Populate countries, gateways, and a user
+INSERT INTO gateway_countries (gateway_id, country_id, priority)
+VALUES
+    (1, 1, 1),
+    (2, 1, 2),
+    (3, 2, 1)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO users (username, email, password, country_id, created_at, updated_at)

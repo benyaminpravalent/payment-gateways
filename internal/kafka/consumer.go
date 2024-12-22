@@ -5,8 +5,9 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"payment-gateway/app/cmd"
-	"payment-gateway/internal/kafka/handlers"
+	"payment-gateway/database"
+	"payment-gateway/internal/client"
+	"payment-gateway/internal/repositories"
 	"strings"
 	"syscall"
 
@@ -63,12 +64,14 @@ func InitializeKafkaConsumer() {
 type ConsumerHandler struct{}
 
 func (ConsumerHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
-	transactionHandler := handlers.NewTransactionHandler(
-		*cmd.TransactionRepository,
-		cmd.KafkaProducer,
-		*cmd.SendTransactionClient,
-		*cmd.GatewayCountryRepo,
-		*cmd.GatewayRepo,
+	db := database.GetDB()
+
+	transactionHandler := NewTransactionHandler(
+		*repositories.NewTransactionRepository(db),
+		NewKafkaProducer(),
+		*client.NewTransactionClient(),
+		*repositories.NewGatewayCountryRepository(db),
+		*repositories.NewGatewayRepository(db),
 	)
 
 	for message := range claim.Messages() {

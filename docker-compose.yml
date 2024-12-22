@@ -12,6 +12,8 @@ services:
       - "2181:2181" # Zookeeper port
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - kafka_network
 
   kafka:
     image: bitnami/kafka:3.3
@@ -23,33 +25,47 @@ services:
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT
       - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092 # Updated to use the service name
       - KAFKA_BROKER_ID=1
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
     depends_on:
       - zookeeper
+    networks:
+      - kafka_network
 
-  # app:
-  #   build: .
-  #   container_name: payment_gateway_app
-  #   ports:
-  #     - "8080:8080"
-  #   depends_on:
-  #     - kafka
-  #     - zookeeper
-  #     - postgres
-  #     - redis
-  #   environment:
-  #     - DATABASE_URL=postgres://user:password@postgres:5432/payments?sslmode=disable
-  #     - KAFKA_BROKER_URL=kafka-like:9092
-  #     - DB_USER=user
-  #     - DB_PASSWORD=password
-  #     - DB_NAME=payments
-  #     - DB_HOST=postgres
-  #     - DB_PORT=5432
-  #   command: ["/app/main"]
-  #   networks:
-  #     - kafka_network
+  app:
+    build: .
+    container_name: payment_gateway_app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka
+      - zookeeper
+      - postgres
+    environment:
+      - POSTGRES_URI=postgres://user:password@postgres:5432/payments?sslmode=disable
+      - KAFKA_BROKER_URL=kafka:9092
+      - KAFKA_GROUP_ID=payment-gateway-group
+      - KAFKA_CLIENT_ID=payment-gateway-client
+      - SEND_TRANSACTION_KAFKA_TOPIC=process-transaction
+
+      # Gateway A Configuration
+      - GATEWAY_A_URL=http://gateway_a:8081
+      - GATEWAY_A_API_KEY=api_key_a
+      - GATEWAY_A_PRIVATE_KEY=12345678901234567890123456789012
+
+      # Gateway B Configuration
+      - GATEWAY_B_URL=http://gateway_b:8082
+      - GATEWAY_B_API_KEY=api_key_b
+      - GATEWAY_B_PRIVATE_KEY=12345678901234567890123456789012
+
+      # Gateway C Configuration
+      - GATEWAY_C_URL=http://gateway_c:8083
+      - GATEWAY_C_API_KEY=api_key_c
+      - GATEWAY_C_PRIVATE_KEY=12345678901234567890123456789012
+    command: ["go", "run", "app/main.go", "rest"]
+    networks:
+      - kafka_network
 
   postgres:
     image: postgres:13
@@ -64,18 +80,6 @@ services:
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - kafka_network
- 
-
-  redis:
-    image: redis:latest
-    container_name: redis
-    ports:
-      - "6379:6379"
-    environment:
-      - REDIS_PASSWORD=password 
-    networks:
-      - kafka_network 
-
 
 volumes:
   kafka-volume:

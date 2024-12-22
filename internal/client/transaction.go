@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"log"
 	"payment-gateway/models"
+	"time"
+
+	"golang.org/x/exp/rand"
 )
 
 type TransactionClient struct{}
@@ -19,16 +22,20 @@ func (c *TransactionClient) SendTransaction(
 	gatewayName string,
 	gatewayConfig models.GatewayConfig,
 ) error {
-	isSuccess := true
-	// uncomment to test the fault-tolerance
-	// randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
-	// isSuccess = randGen.Intn(2) == 0
+	randGen := rand.New(rand.NewSource(uint64(time.Now().UnixNano())))
+	isSuccess := randGen.Intn(2) == 0
+
+	/* ====to test the fault-tolerance==== */
+	// isSuccess = false
+	// if gatewayName == constants.GATEWAY_B {
+	// 	isSuccess = true
+	// }
 
 	if !isSuccess {
 		return fmt.Errorf("gateway failed to process transaction")
 	}
 
-	log.Printf("Transaction processed successfully by gateway=[%s]", gatewayName)
+	log.Printf("Transaction is processed by gateway=[%s]", gatewayName)
 
 	return nil
 }

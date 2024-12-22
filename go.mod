@@ -1,6 +1,8 @@
 module payment-gateway
 
-go 1.20
+go 1.22.0
+
+toolchain go1.22.8
 
 require (
 	github.com/Shopify/sarama v1.32.0
@@ -9,8 +11,10 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/lib/pq v1.10.9
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/sony/gobreaker v1.0.0
 	github.com/spf13/cobra v1.8.1
+	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67
 )
 
 require (

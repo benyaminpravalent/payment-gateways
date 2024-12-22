@@ -20,8 +20,8 @@ func (r *GatewayCountryRepository) GetHealthyGatewayByCountryID(ctx context.Cont
 	var gatewayDetail models.GatewayDetail
 	query := `
 		SELECT
-			g.id AS gateway_id,
-			g.name AS gateway_name,
+			g.id,
+			g.name,
 			g.data_format_supported,
 			g.health_status,
 			g.last_checked_at,
