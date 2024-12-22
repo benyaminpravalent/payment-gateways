@@ -1,0 +1,306 @@
+openapi: 3.0.3
+info:
+  title: Payment Gateway API
+  description: API documentation for the payment gateway project.
+  version: 1.0.0
+paths:
+  /transaction/deposit:
+    post:
+      summary: Deposit money to the user's account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: integer
+                  example: 1
+                amount:
+                  type: number
+                  format: float
+                  example: 1000
+                currency:
+                  type: string
+                  example: USD
+                country_id:
+                  type: integer
+                  example: 1
+              required:
+                - user_id
+                - amount
+                - currency
+                - country_id
+      responses:
+        '202':
+          description: Transaction is in process
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 202
+                  message:
+                    type: string
+                    example: Transaction is in process
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 8
+                      reference_id:
+                        type: string
+                        example: "81d12e04-6d07-44d1-8c36-a88ed88126b6"
+                      amount:
+                        type: number
+                        format: float
+                        example: 1000
+                      currency:
+                        type: string
+                        example: USD
+                      type:
+                        type: string
+                        example: deposit
+                      status:
+                        type: string
+                        example: pending
+                      created_at:
+                        type: string
+                        format: date-time
+                        example: "2024-12-22T12:14:17.42536993Z"
+                      updated_at:
+                        type: string
+                        format: date-time
+                        example: "2024-12-22T12:14:17.425370013Z"
+                      gateway_id:
+                        type: integer
+                        example: 0
+                      country_id:
+                        type: integer
+                        example: 1
+                      user_id:
+                        type: integer
+                        example: 1
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 400
+                  message:
+                    type: string
+                    example: Invalid request payload
+        '500':
+          description: Failed to process deposit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 500
+                  message:
+                    type: string
+                    example: Failed to process withdrawal
+  /transaction/withdraw:
+    post:
+      summary: Withdraw money from the user's account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: integer
+                  example: 1
+                amount:
+                  type: number
+                  format: float
+                  example: 1000
+                currency:
+                  type: string
+                  example: USD
+                country_id:
+                  type: integer
+                  example: 1
+              required:
+                - user_id
+                - amount
+                - currency
+                - country_id
+      responses:
+        '202':
+          description: Transaction is in process
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 202
+                  message:
+                    type: string
+                    example: Transaction is in process
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 8
+                      reference_id:
+                        type: string
+                        example: "81d12e04-6d07-44d1-8c36-a88ed88126b6"
+                      amount:
+                        type: number
+                        format: float
+                        example: 1000
+                      currency:
+                        type: string
+                        example: USD
+                      type:
+                        type: string
+                        example: withdraw
+                      status:
+                        type: string
+                        example: pending
+                      created_at:
+                        type: string
+                        format: date-time
+                        example: "2024-12-22T12:14:17.42536993Z"
+                      updated_at:
+                        type: string
+                        format: date-time
+                        example: "2024-12-22T12:14:17.425370013Z"
+                      gateway_id:
+                        type: integer
+                        example: 0
+                      country_id:
+                        type: integer
+                        example: 1
+                      user_id:
+                        type: integer
+                        example: 1
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 400
+                  message:
+                    type: string
+                    example: Invalid request payload
+        '500':
+          description: Failed to process withdrawal
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 500
+                  message:
+                    type: string
+                    example: Failed to process withdrawal
+  /transaction/callback:
+    post:
+      summary: Handle transaction callback
+      description: This endpoint accepts callbacks in both JSON and SOAP formats and processes transaction status updates.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  example: "c586b074-c200-49d9-9898-bf0a4e28bffb"
+                amount:
+                  type: number
+                  format: float
+                  example: 1000
+                currency:
+                  type: string
+                  example: USD
+                status:
+                  type: string
+                  example: completed
+              required:
+                - id
+                - amount
+                - currency
+                - status
+          text/xml:
+            schema:
+              type: object
+              xml:
+                name: Envelope
+                namespace: "http://schemas.xmlsoap.org/soap/envelope/"
+              properties:
+                Header:
+                  type: object
+                  xml:
+                    name: Header
+                Body:
+                  type: object
+                  xml:
+                    name: Body
+                  properties:
+                    TransactionCallbackRequest:
+                      type: object
+                      xml:
+                        name: TransactionCallbackRequest
+                        namespace: "http://example.com/transaction"
+                      properties:
+                        id:
+                          type: string
+                          xml:
+                            name: id
+                          example: "c586b074-c200-49d9-9898-bf0a4e28bffb"
+                        amount:
+                          type: number
+                          format: float
+                          xml:
+                            name: amount
+                          example: 1000
+                        currency:
+                          type: string
+                          xml:
+                            name: currency
+                          example: USD
+                        status:
+                          type: string
+                          xml:
+                            name: status
+                          example: completed
+      responses:
+        '200':
+          description: Callback received successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Callback received
