@@ -6,11 +6,11 @@ import (
 )
 
 type GatewayService struct {
-	gatewayRepository *repositories.GatewayRepository
+	gatewayRepository repositories.IGatewayRepository
 }
 
 func NewGatewayService(
-	gatewayRepository *repositories.GatewayRepository,
+	gatewayRepository repositories.IGatewayRepository,
 ) *GatewayService {
 	return &GatewayService{
 		gatewayRepository: gatewayRepository,

@@ -7,6 +7,10 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+type IGatewayRepository interface {
+	UpdateHealthStatus(ctx context.Context, gatewayID int, healthStatus string) error
+}
+
 type GatewayRepository struct {
 	db *sqlx.DB
 }

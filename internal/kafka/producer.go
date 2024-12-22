@@ -11,7 +11,6 @@ import (
 
 type KafkaProducer interface {
 	ProduceMessage(data []byte, topic string) error
-	Close() error
 }
 
 type SaramaProducer struct {
@@ -55,9 +54,4 @@ func (p *SaramaProducer) ProduceMessage(data []byte, topic string) error {
 
 	log.Printf("Message sent successfully to topic %s, partition %d, offset %d\n", topic, partition, offset)
 	return nil
-}
-
-func (p *SaramaProducer) Close() error {
-	log.Println("Closing Kafka producer...")
-	return p.producer.Close()
 }
