@@ -50,29 +50,6 @@ func (r *TransactionRepository) InsertTransaction(ctx context.Context, transacti
 	return nil
 }
 
-// GetTransactionByReferenceID retrieves a transaction by its reference ID
-func (r *TransactionRepository) GetTransactionByReferenceID(ctx context.Context, referenceID string) (*models.Transaction, error) {
-	var transaction models.Transaction
-	query := `
-		SELECT 
-			id, reference_id, amount, currency, type, status, created_at, updated_at, gateway_id, country_id, user_id
-		FROM 
-			transactions
-		WHERE 
-			reference_id = $1;
-	`
-	err := r.db.GetContext(ctx, &transaction, query, referenceID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			log.Printf("Transaction with Reference ID %s not found", referenceID)
-			return nil, nil
-		}
-		log.Printf("Error fetching transaction with Reference ID %s: %v", referenceID, err)
-		return nil, err
-	}
-	return &transaction, nil
-}
-
 // UpdateTransactionStatusByReferenceID updates the status of a transaction by its reference ID
 func (r *TransactionRepository) UpdateTransactionStatusByReferenceID(ctx context.Context, referenceID string, status string) error {
 	query := `
