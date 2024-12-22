@@ -222,9 +222,12 @@ To view the API documentation locally:
 
 ### Unit Tests
 
-Unit tests cover all critical modules of the project. To run the tests:
+Unit tests ensure the correctness of all critical modules in the project. They use mocking for dependencies such as repositories, Kafka producers, and other services to isolate the functionality under test.
+
+#### Running Unit Tests
+To run all unit tests across the project:
 ```bash
-go test ./...
+go test -v ./...
 ```
 
 ---

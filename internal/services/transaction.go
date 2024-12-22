@@ -15,12 +15,12 @@ import (
 )
 
 type TransactionService struct {
-	TransactionRepository *repositories.TransactionRepository
+	TransactionRepository repositories.ITransactionRepository
 	KafkaProducer         kafka.KafkaProducer
 }
 
 func NewTransactionService(
-	transactionRepository *repositories.TransactionRepository,
+	transactionRepository repositories.ITransactionRepository,
 	kafkaProducer kafka.KafkaProducer,
 ) *TransactionService {
 	return &TransactionService{

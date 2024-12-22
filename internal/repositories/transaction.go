@@ -10,6 +10,12 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+type ITransactionRepository interface {
+	InsertTransaction(ctx context.Context, transaction *models.Transaction) error
+	UpdateTransactionStatusByReferenceID(ctx context.Context, referenceID string, status string) error
+	UpdateGatewayIDByTransactionID(ctx context.Context, transactionID int, gatewayID int) error
+}
+
 // TransactionRepository handles database operations for the transactions table
 type TransactionRepository struct {
 	db *sqlx.DB
