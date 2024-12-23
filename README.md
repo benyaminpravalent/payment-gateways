@@ -198,13 +198,14 @@ VALUES ('Stripe', 'JSON');
 3. **Navigate to the Project Directory**:
    Move into the cloned project directory:
    ```bash
-   cd payment-gateway
+   cd payment-gateways
    ```
 
 4. **Run the Application**:
    Build and start the application using Docker Compose:
    ```bash
-   git clone <repository-url>
+   docker-compose up --build -d
+   ```
 
 ---
 
